@@ -107,43 +107,42 @@ public class DAO {
 		}
 
 	}
-	
-	//** CRUD UPDATE **/
-	//selecionar um contato
+
+	// ** CRUD UPDATE **/
+	// selecionar um contato
 	public void selecionarContato(JavaBeans contato) {
 		String readWhere = "select * from contatos where idcon = ?";
-		
+
 		int idDb = Integer.parseInt(contato.getIdcon());
-		
+
 		try {
 			Connection con = conectar();
 			PreparedStatement psStatement = con.prepareStatement(readWhere);
 			psStatement.setInt(1, idDb);
-			//receber os dados
+			// receber os dados
 			ResultSet resultSet = psStatement.executeQuery();
-			
+
 			System.out.println(contato.getIdcon());
-			//definir um objto contato com os dados recebidos
+			// definir um objto contato com os dados recebidos
 			while (resultSet.next()) {
 				idDb = resultSet.getInt(1);
-				
+
 				contato.setIdcon(String.valueOf(idDb));
 				contato.setNome(resultSet.getString(2));
 				contato.setFone(resultSet.getString(3));
 				contato.setEmail(resultSet.getString(4));
-				
+
 				System.out.println("SUCESSO********************************");
 			}
 			con.close();
-			
-			
+
 		} catch (Exception e) {
-			System.out.println(e+"error********************************");
+			System.out.println(e + "error********************************");
 		}
-		
+
 	}
-	
-	//Editar o contato
+
+	// Editar o contato
 	public void alterarContato(JavaBeans contato) {
 		String updateString = "update contatos set nome=?,fone=?,email=? where idcon=?";
 		int idDb = Integer.parseInt(contato.getIdcon());
@@ -156,12 +155,29 @@ public class DAO {
 			pStatement.setInt(4, idDb);
 			pStatement.executeUpdate();
 			con.close();
+
+		} catch (Exception e) {
+			System.out.println(e + "*********ERRO atualizar");
+		}
+
+	}
+
+	/** CRUD DELETE **/
+	public void deletarContato(JavaBeans contato) {
+		String delete = "delete from contatos where idcon=?";
+		int idcon = Integer.parseInt(contato.getIdcon());
+		try {
+			Connection con = conectar();
+			PreparedStatement pStatement = con.prepareStatement(delete);
+			pStatement.setInt(1, idcon);
+			pStatement.executeUpdate();
+			
+			con.close();
 			
 		} catch (Exception e) {
-			System.out.println(e+"*********ERRO atualizar");
+			System.out.println(e + "*******ERRO DELETAR CONTATO****************");
 		}
-		
+
 	}
-	
 
 }

@@ -1,7 +1,9 @@
 package controller;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -10,10 +12,16 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+
 import model.DAO;
 import model.JavaBeans;
 
-@WebServlet(urlPatterns = { "/Controller", "/main", "/insert", "/select", "/update" })
+@WebServlet(urlPatterns = { "/Controller", "/main", "/insert", "/select", "/update", "/delete", "/relatorio" })
 public class Controller extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
@@ -31,7 +39,7 @@ public class Controller extends HttpServlet {
 
 		// Conexao
 		String action = request.getServletPath();
-		System.out.println();
+		System.out.println(action);
 
 		// se a pagina for direcionada para o main ele ira buscar os contatos
 		if (action.equals("/main")) {
@@ -42,6 +50,10 @@ public class Controller extends HttpServlet {
 			listarContato(request, response);
 		} else if (action.equals("/update")) {
 			atualizarContato(request, response);
+		} else if (action.equals("/delete")) {
+			deleteContato(request, response);
+		} else if (action.equals("/relatorio")) {
+			gerarPdfList(request, response);
 		} else {
 			response.sendRedirect("index.html");
 		}
@@ -125,6 +137,73 @@ public class Controller extends HttpServlet {
 		// redirecionar para o documento agenda.jsp (atualizando as alterações)
 		response.sendRedirect("main");
 
+	}
+
+	// deletar um contato
+	private void deleteContato(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		// RECEBER O ID
+		String idcon = request.getParameter("idcon");
+		// setar a variavel id no Model JavaBeans
+		contato.setIdcon(idcon);
+
+		// execultar o metodo deletarContatato (DAO) passando objeto contato
+		dao.deletarContato(contato);
+
+		// teste recebimento
+		// System.out.println(idconString);
+
+		// redirecionar para o documento agenda.jsp (atualizando as alterações)
+		response.sendRedirect("main");
+
+	}
+
+	//Criar um PDF com a lista de contatos
+	private void gerarPdfList(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, EOFException {
+
+		Document document = new Document();
+		try {
+			//definir que o tipo do conteudo sera PDF
+			response.setContentType("apllication/pdf");
+			//definir o Nome do documento
+			response.addHeader("Content-Disposition", "inline; filename = contatos.pdf");
+			//Criar o docuemento
+			PdfWriter.getInstance(document, response.getOutputStream());
+			//abrir o documento e adicionar conteudo
+			document.open();
+			document.add(new Paragraph("Lista de Contatos"));
+			document.add(new Paragraph(" "));
+			//criar uma tabela no arquivo pdf
+			PdfPTable tablePdf = new PdfPTable(3);//o numero (3) informa que a tabela tera 3 colunas.
+			//Criar o cabeçalho
+			PdfPCell col1 = new PdfPCell(new Paragraph("Nome"));
+			PdfPCell col2 = new PdfPCell(new Paragraph("Fone"));
+			PdfPCell col3 = new PdfPCell(new Paragraph("Email"));
+			tablePdf.addCell(col1);
+			tablePdf.addCell(col2);
+			tablePdf.addCell(col3);
+			
+			//adicionar os contatos na tabela
+			ArrayList<JavaBeans> listContatos = dao.listarContatos();
+			for (int i = 0; i < listContatos.size(); i++) {
+				tablePdf.addCell(listContatos.get(i).getNome());
+				tablePdf.addCell(listContatos.get(i).getFone());
+				tablePdf.addCell(listContatos.get(i).getEmail());
+					
+			}
+			
+			
+			//adicionando a tabela ao documento
+			document.add(tablePdf);
+			
+			
+			//fechar o docuemento
+			document.close();
+		} catch (Exception e) {
+			System.out.println(e+"****ERRO ao GERAR PDF*********************************");
+			document.close();
+		}
 	}
 
 }
